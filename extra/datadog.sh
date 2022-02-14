@@ -164,6 +164,12 @@ DD_PYTHONPATH="$DD_PYTHONPATH:$SETUPTOOLS_PATH:$PIP_PATH"
 # Export agent's PYTHONPATH be used by the agent-wrapper
 export DD_PYTHONPATH="$DD_DIR/embedded/lib:$DD_PYTHONPATH"
 
+# Export agent's PYTHON binary
+export PATH="/app/.apt/opt/datadog-agent/embedded/bin:$PATH"
+
+which python
+python --version
+
 # Give applications a chance to modify env vars prior to running.
 # Note that this can modify existing env vars or perform other actions (e.g. modify the conf file).
 # For more information on variables and other things you may wish to modify, reference this script
