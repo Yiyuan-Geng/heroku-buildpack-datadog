@@ -209,6 +209,12 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
     DD_POSTGRES_URL_VAR="DATABASE_URL"
   fi
 
+  if [ -n "$DD_POSTGRES_TAGS" ]; then
+    DD_POSTGRES_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_POSTGRES_TAGS")"
+    DD_POSTGRES_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_POSTGRES_TAGS_NORMALIZED")"
+    DD_POSTGRES_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_POSTGRES_TAGS_NORMALIZED_YAML")"
+  fi
+
   # Use a comma separator instead of new line
   IFS=","
 
@@ -229,6 +235,9 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
         echo -e "    disable_generic_tags: false" >> "$POSTGRES_CONF/conf.yaml"
         if [ "$DD_ENABLE_DBM" == "true" ]; then
           echo -e "    dbm: true" >> "$POSTGRES_CONF/conf.yaml"
+        fi
+        if [ -n "$DD_POSTGRES_TAGS" ]; then
+          echo -e "${DD_POSTGRES_TAGS_YAML}" >> "$POSTGRES_CONF/conf.yaml"
         fi
       fi
     fi
