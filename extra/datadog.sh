@@ -209,11 +209,6 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
     DD_POSTGRES_URL_VAR="DATABASE_URL"
   fi
 
-  if [ -n "$DD_POSTGRES_TAGS" ]; then
-    DD_POSTGRES_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_POSTGRES_TAGS")"
-    DD_POSTGRES_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_POSTGRES_TAGS_NORMALIZED")"
-    DD_POSTGRES_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_POSTGRES_TAGS_NORMALIZED_YAML")"
-  fi
 
   # Use a comma separator instead of new line
   IFS=","
@@ -224,6 +219,19 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
   for PG_URL in $DD_POSTGRES_URL_VAR
   do
     if [ -n "${!PG_URL}" ]; then
+
+      # Tag the Postgres check
+      PG_TAGS="appname:$HEROKU_APP_NAME pgurlvar:$PG_URL"
+      if [ -n "$DD_POSTGRES_TAGS" ]; then
+        DD_POSTGRES_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_POSTGRES_TAGS")"
+        DD_POSTGRES_TAGS="$PG_TAGS $DD_POSTGRES_TAGS_NORMALIZED"
+      else
+        DD_POSTGRES_TAGS="$PG_TAGS"
+      fi
+
+      DD_POSTGRES_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_POSTGRES_TAGS")"
+      DD_POSTGRES_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_POSTGRES_TAGS_NORMALIZED_YAML")"
+
       POSTGREGEX='^postgres://([^:]+):([^@]+)@([^:]+):([^/]+)/(.*)$'
       if [[ ${!PG_URL} =~ $POSTGREGEX ]]; then
         echo -e "  - host: ${BASH_REMATCH[3]}" >>  "$POSTGRES_CONF/conf.yaml"
