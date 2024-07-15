@@ -41,6 +41,22 @@ version_equal_or_newer() {
   [ "$1" == "$(echo -e "$1\n$2" | sort -V | tail -n1)" ]
 }
 
+normalize_db_tags() {
+
+  DB_TAGS="appname:$HEROKU_APP_NAME instance_url_var:$1"
+  if [ -n "$2" ]; then
+    DD_DB_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$2")"
+    DD_DB_TAGS="$DB_TAGS $DD_DB_TAGS_NORMALIZED"
+  else
+    DD_DB_TAGS="$DB_TAGS"
+  fi
+
+  DD_DB_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_DB_TAGS")"
+  DD_DB_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_DB_TAGS_NORMALIZED_YAML")"
+
+  echo "$DD_DB_TAGS_YAML"
+}
+
 # Include application's datadog configs
 APP_DATADOG_DEFAULT="/app/datadog"
 APP_DATADOG="${DD_HEROKU_CONF_FOLDER:=$APP_DATADOG_DEFAULT}"
@@ -209,7 +225,6 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
     DD_POSTGRES_URL_VAR="DATABASE_URL"
   fi
 
-
   # Use a comma separator instead of new line
   IFS=","
 
@@ -219,18 +234,8 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
   for PG_URL in $DD_POSTGRES_URL_VAR
   do
     if [ -n "${!PG_URL}" ]; then
-
-      # Tag the Postgres check
-      PG_TAGS="appname:$HEROKU_APP_NAME pgurlvar:$PG_URL"
-      if [ -n "$DD_POSTGRES_TAGS" ]; then
-        DD_POSTGRES_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_POSTGRES_TAGS")"
-        DD_POSTGRES_TAGS="$PG_TAGS $DD_POSTGRES_TAGS_NORMALIZED"
-      else
-        DD_POSTGRES_TAGS="$PG_TAGS"
-      fi
-
-      DD_POSTGRES_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_POSTGRES_TAGS")"
-      DD_POSTGRES_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_POSTGRES_TAGS_NORMALIZED_YAML")"
+      unset IFS
+      DD_POSTGRES_TAGS_YAML=$(normalize_db_tags $PG_URL $DD_POSTGRES_TAGS)
 
       POSTGREGEX='^postgres://([^:]+):([^@]+)@([^:]+):([^/]+)/(.*)$'
       if [[ ${!PG_URL} =~ $POSTGREGEX ]]; then
@@ -281,18 +286,9 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
 
   for RD_URL in $DD_REDIS_URL_VAR
   do
-
     if [ -n "${!RD_URL}" ]; then
-      REDIS_TAGS="appname:$HEROKU_APP_NAME redisurlvar:$RD_URL"
-      if [ -n "$DD_REDIS_TAGS" ]; then
-        DD_REDIS_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_REDIS_TAGS")"
-        DD_REDIS_TAGS="$REDIS_TAGS $DD_REDIS_TAGS_NORMALIZED"
-      else
-        DD_REDIS_TAGS="$REDIS_TAGS"
-      fi
-
-      DD_REDIS_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_REDIS_TAGS")"
-      DD_REDIS_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_REDIS_TAGS_NORMALIZED_YAML")"
+      unset IFS
+      DD_REDIS_TAGS_YAML=$(normalize_db_tags $RD_URL $DD_REDIS_TAGS)
 
       REDISREGEX='^redis(s?)://([^:]*):([^@]+)@([^:]+):([^/]+)/?(.*)$'
       if [[ ${!RD_URL} =~ $REDISREGEX ]]; then
