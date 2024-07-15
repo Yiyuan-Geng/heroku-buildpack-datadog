@@ -267,6 +267,12 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
     DD_REDIS_URL_VAR="REDIS_URL"
   fi
 
+  if [ -n "$DD_REDIS_TAGS" ]; then
+    DD_REDIS_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_REDIS_TAGS")"
+    DD_REDIS_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_REDIS_TAGS_NORMALIZED")"
+    DD_REDIS_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_REDIS_TAGS_NORMALIZED_YAML")"
+  fi
+
   # Use a comma separator instead of new line
   IFS=","
 
@@ -290,6 +296,9 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
         fi
         if [[ ! -z ${BASH_REMATCH[6]} ]]; then
           echo -e "    db: ${BASH_REMATCH[6]}" >> "$REDIS_CONF/conf.yaml"
+        fi
+        if [ -n "$DD_REDIS_TAGS" ]; then
+          echo -e "${DD_REDIS_TAGS_YAML}" >> "$REDIS_CONF/conf.yaml"
         fi
       fi
     fi
