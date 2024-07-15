@@ -244,9 +244,7 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
         if [ "$DD_ENABLE_DBM" == "true" ]; then
           echo -e "    dbm: true" >> "$POSTGRES_CONF/conf.yaml"
         fi
-        if [ -n "$DD_POSTGRES_TAGS" ]; then
-          echo -e "${DD_POSTGRES_TAGS_YAML}" >> "$POSTGRES_CONF/conf.yaml"
-        fi
+        echo -e "${DD_POSTGRES_TAGS_YAML}" >> "$POSTGRES_CONF/conf.yaml"
       fi
     fi
   done
@@ -275,12 +273,6 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
     DD_REDIS_URL_VAR="REDIS_URL"
   fi
 
-  if [ -n "$DD_REDIS_TAGS" ]; then
-    DD_REDIS_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_REDIS_TAGS")"
-    DD_REDIS_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_REDIS_TAGS_NORMALIZED")"
-    DD_REDIS_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_REDIS_TAGS_NORMALIZED_YAML")"
-  fi
-
   # Use a comma separator instead of new line
   IFS=","
 
@@ -289,7 +281,19 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
 
   for RD_URL in $DD_REDIS_URL_VAR
   do
+
     if [ -n "${!RD_URL}" ]; then
+      REDIS_TAGS="appname:$HEROKU_APP_NAME redisurlvar:$RD_URL"
+      if [ -n "$DD_REDIS_TAGS" ]; then
+        DD_REDIS_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$DD_REDIS_TAGS")"
+        DD_REDIS_TAGS="$REDIS_TAGS $DD_REDIS_TAGS_NORMALIZED"
+      else
+        DD_REDIS_TAGS="$REDIS_TAGS"
+      fi
+
+      DD_REDIS_TAGS_NORMALIZED_YAML="$(sed 's/\//\\\//g'  <<< "$DD_REDIS_TAGS")"
+      DD_REDIS_TAGS_YAML="    tags:\n      - $(sed 's/\ /\\n      - /g'  <<< "$DD_REDIS_TAGS_NORMALIZED_YAML")"
+
       REDISREGEX='^redis(s?)://([^:]*):([^@]+)@([^:]+):([^/]+)/?(.*)$'
       if [[ ${!RD_URL} =~ $REDISREGEX ]]; then
         echo -e "  - host: ${BASH_REMATCH[4]}" >> "$REDIS_CONF/conf.yaml"
@@ -305,9 +309,7 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
         if [[ ! -z ${BASH_REMATCH[6]} ]]; then
           echo -e "    db: ${BASH_REMATCH[6]}" >> "$REDIS_CONF/conf.yaml"
         fi
-        if [ -n "$DD_REDIS_TAGS" ]; then
-          echo -e "${DD_REDIS_TAGS_YAML}" >> "$REDIS_CONF/conf.yaml"
-        fi
+        echo -e "${DD_REDIS_TAGS_YAML}" >> "$REDIS_CONF/conf.yaml"
       fi
     fi
   done
