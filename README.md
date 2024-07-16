@@ -120,8 +120,10 @@ In addition to the environment variables shown above, there are several others y
 | `DD_HEROKU_CONF_FOLDER`    | *Optional.* By default, the buildpack looks in the root of your application for a folder `/datadog` for any configuration files you wish to include, see [prerun.sh script](#prerun-script). This location can be overridden by setting this to your desired path. |
 | `DD_ENABLE_HEROKU_REDIS`    | *Optional.* Set it to true to enable Redis integration auto-discovery. Check [the Enabling the Datadog Redis Integration section](#enabling-the-datadog-redis-integration) for details. |
 | `DD_REDIS_URL_VAR`    | *Optional.* By default, Redis integration auto-discovery uses the connection string stored at `REDIS_URL`. To override it, set this variable to a comma-separated list of variable names storing the connection strings. Check [the Enabling the Datadog Redis Integration section](#enabling-the-datadog-redis-integration) for details. |
+| `DD_REDIS_TAGS`  | *Optional.* Sets additional tags for the Redis integration provided as a space-separated string. For example, `heroku config:set DD_REDIS_TAGS="simple-tag-0 tag-key-1:tag-value-1"`. |
 | `DD_ENABLE_HEROKU_POSTGRES`    | *Optional.* Set it to true to enable Postgres integration auto-discovery. Check [the Enabling the Datadog Postgres Integration section](#enabling-the-datadog-postgres-integration) for details. |
 | `DD_POSTGRES_URL_VAR`    | *Optional.* By default, Postgres integration auto-discovery uses the connection string stored at `DATABASE_URL`. To override it, set this variable to a comma-separated list of variable names storing the connection strings. Check [the Enabling the Datadog Postgres Integration section](#enabling-the-datadog-postgres-integration) for details. |
+| `DD_POSTGRES_TAGS`  | *Optional.* Sets additional tags for the Postgres integration provided as a space-separated string. For example, `heroku config:set DD_POSTGRES_TAGS="simple-tag-0 tag-key-1:tag-value-1"`. |
 | `DD_ENABLE_DBM`    | *Optional.* If you are enabling the Datadog Postgres integration following [this guide](#enabling-the-datadog-postgres-integration), set `DD_ENABLE_DBM` to `true` to enable Database Monitoring. |
 
 For additional documentation, see the [Datadog Agent documentation][12].
@@ -185,6 +187,10 @@ heroku config:set REDISCLOUD_URL="redis://xxxxx:yyyyy@redis-cloud-url"
 heroku config:set DD_REDIS_URL_VAR=REDIS_URL,REDISCLOUD_URL
 ```
 
+By default, this integration is tagged with `appname` as the Heroku application name, and `instance_url_var` as the variable name storing the Redis instance connection URL. For example, if the application is called `heroku-app` and there are two Redis instances, one in `REDIS_URL` one in `REDISCLOUD_URL`, the first Redis instance will be tagged as `appname:heroku-app instance_url_var:REDIS_URL` and the second one as `appname:heroku-app instance_url_var:REDISCLOUD_URL`.
+
+Additional tags can be added using the `DD_REDIS_TAGS` variable.
+
 ### Enabling the Datadog Postgres integration
 
 If you are using a Postgres add-on in your Heroku application (for example, Heroku Postgres), you can enable the Datadog Postgres integration by setting an environment variable:
@@ -204,6 +210,10 @@ heroku config:set POSTGRES_URL2="postgres://xxxxx:yyyyy@postgres-url-2:5432/dbna
 # This env var must point to other env vars.
 heroku config:set DD_POSTGRES_URL_VAR=POSTGRES_URL1,POSTGRES_URL2
 ```
+
+By default, this integration is tagged with `appname` as the Heroku application name, and `instance_url_var` as the variable name storing the Postgres instance connection URL. For example, if the application is called `heroku-app` and there are two Postgres instances, one in `POSTGRES_URL1` one in `POSTGRES_URL2`, the first Postgres instance will be tagged as `appname:heroku-app instance_url_var:POSTGRES_URL1` and the second one as `appname:heroku-app instance_url_var:POSTGRES_URL2`.
+
+Additional tags can be added using the `DD_POSTGRES_TAGS` variable.
 
 To enable [Database Monitoring][17] for your Postgres instances, grant the Agent access to your database following [these instructions][18], and set `DD_ENABLE_DBM` to true:
 

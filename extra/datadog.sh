@@ -42,7 +42,6 @@ version_equal_or_newer() {
 }
 
 normalize_db_tags() {
-
   DB_TAGS="appname:$HEROKU_APP_NAME instance_url_var:$1"
   if [ -n "$2" ]; then
     DD_DB_TAGS_NORMALIZED="$(sed "s/,[ ]\?/\ /g"  <<< "$2")"
@@ -234,7 +233,7 @@ if [ "$DD_ENABLE_HEROKU_POSTGRES" == "true" ]; then
   for PG_URL in $DD_POSTGRES_URL_VAR
   do
     if [ -n "${!PG_URL}" ]; then
-      unset IFS
+      IFS=$'\n'
       DD_POSTGRES_TAGS_YAML=$(normalize_db_tags $PG_URL $DD_POSTGRES_TAGS)
 
       POSTGREGEX='^postgres://([^:]+):([^@]+)@([^:]+):([^/]+)/(.*)$'
@@ -287,7 +286,7 @@ if [ "$DD_ENABLE_HEROKU_REDIS" == "true" ]; then
   for RD_URL in $DD_REDIS_URL_VAR
   do
     if [ -n "${!RD_URL}" ]; then
-      unset IFS
+      IFS=$'\n'
       DD_REDIS_TAGS_YAML=$(normalize_db_tags $RD_URL $DD_REDIS_TAGS)
 
       REDISREGEX='^redis(s?)://([^:]*):([^@]+)@([^:]+):([^/]+)/?(.*)$'
